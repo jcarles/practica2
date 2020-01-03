@@ -1,0 +1,660 @@
+---
+title: "Practica 2"
+output:
+  pdf_document: default
+  html_notebook: default
+  html_document:
+    df_print: paged
+---
+<div style="width: 100%; clear: both;">
+<div style="float: left; width: 50%;">
+<img src="http://www.uoc.edu/portal/_resources/common/imatges/marca_UOC/UOC_Masterbrand.jpg" align="left">
+</div>
+<div style="float: right; width: 50%;">
+<p style="margin: 0; padding-top: 22px; text-align:right;"> M2.951 - Tipologia i cicle de vida de les dades aula 1</p>
+<p style="margin: 0; text-align:right;">2019-1 · Màster universitari en Ciència de dades (Data science)</p>
+<p style="margin: 0; text-align:right; padding-button: 100px;">Estudis de Informàtica, Multimèdia i Telecomunicacions</p>
+</div>
+</div>
+<div style="width:100%;">&nbsp;</div>
+<br/>
+ <ol start="1">
+  <li>Descripció del dataset. </li>
+  <li>Integració i selecció de les dades d’interès a analitzar.</li>
+  <li>Neteja de les dades.
+  <br>3.1 Les dades contenen zeros o elements buits? Com gestionaries aquests casos?
+  <br>3.2 Identificació i tractament de valors extrems.
+  <li>Anàlisi de les dades.
+  <br>4.1 Selecció dels grups de dades que es volen analitzar/comparar (planificació dels
+      anàlisis a aplicar). 
+  <br>4.2 Comprovació de la normalitat i homogeneïtat de la variància.
+  <br>4.3 Aplicació de proves estadístiques per comparar els grups de dades. En funció de
+les dades i de l’objectiu de l’estudi, aplicar proves de contrast d’hipòtesis,
+correlacions, regressions, etc. Aplicar almenys tres mètodes d’anàlisi diferents.
+  <li>Representació dels resultats a partir de taules i gràfiques.</li>
+  <li>Resolució del problema. A partir dels resultats obtinguts, quines són les conclusions? 
+Els resultats permeten respondre al problema?</li>
+  <li>Codi: Cal adjuntar el codi, preferiblement en R, amb el que s’ha realitzat la neteja, anàlisi i representació de les dades. Si ho preferiu, també podeu treballar en Python.
+        
+</li>
+</ol>
+   
+Carreguem el fitxer. Afegim la opció per a que els camps de text no els consideri un Factor. 
+
+
+
+```{r}
+library(tidyverse)
+train <- read.csv("~/Documents/Master UOC/Tipologia i cicle de vida de dades/Practica2/train.csv", stringsAsFactors=FALSE)
+test <- read.csv("~/Documents/Master UOC/Tipologia i cicle de vida de dades/Practica2/test.csv", stringsAsFactors=FALSE)
+str(train)
+```
+
+#1. Descripció del dataset. Perquè és important i quina pregunta/problema pretén respondre?
+
+El dataset conté informació sobre els passatgers del Titanic. De cada passatger tenim una sèrie de variables com ara el nom, edat, gènere, classe econòmica-social,.. i la variable que indica si es va salvar o no. La idea que hi ha al darrera d'aquest fitxer és la de trobar un model automàtic capaç de predir si el passatger es va salvar o no en funció de la resta de variables.
+
+El dataset train conté 891 registres, amb 12 variables cadascun.
+El dataset test conté 418 registres amb 11 variables cadascun.
+
+El dataset test no conté la variable objectiu Survived.
+Això és perquè forma part d'una competició en la que es tracta d''entrenar el model per tal de predir aquesta variable per al conjunt de dades test.
+
+ PassengerId  : variable identificativa
+ $ Survived   : Variable objectiu qualitativa 
+ $ Pclass     : Variable qualitativa
+ $ Name       : Qualitativa 
+ $ Sex        : qualitativa
+ $ Age        : Quantitativa discreta 
+ $ SibSp      : Quantitativa discreta 
+ $ Parch      : Quantitativa discreta 
+ $ Ticket     : Qualitativa
+ $ Fare       : Quantitativa contínua
+ $ Cabin      : Qualitativa
+ $ Embarked   : Qualitativa
+
+## Analitzem ara cadascuna de les variables:
+### La variable objectiu : Survived
+
+La variable Survived és de tipus booleà. Ens indica si el passatger és viu o mort.
+El domini de valors és el següent:
+0 = No, 1 = Yes
+
+Passem el camp Survived a factors:
+```{r}
+train$Survived <- as.factor(train$Survived)
+print(levels(train$Survived))
+
+```
+```{r}
+plot(train$Survived)
+```
+
+### La variable Pclass
+Ens indica la classe del bitllet en la que viatjava el passatger. Ens indica de retruc el estatus social. El domini de valors és:  
+1 = 1st, 2 = 2nd, 3 = 3rd  
+Tot i tractar-se d'un enter, és una variable categòrica ja que descriu un valor categòric amb el que no es pot fer operacions aritmètiques.  
+
+Passem el camp Pclass a factors:
+```{r}
+train$Pclass <- as.factor(train$Pclass)
+print(levels(train$Pclass))
+test$Pclass <- as.factor(test$Pclass)
+print(levels(test$Pclass))
+```
+```{r}
+plot(train$Pclass)
+
+```
+### La variable Sex
+És indica si el passatger era home o dona.  
+el domini de valors és: male / female  
+  
+Passem el camp Sex a factors:  
+```{r}
+train$Sex <- as.factor(train$Sex)
+print(levels(train$Sex))
+test$Sex <- as.factor(test$Sex)
+print(levels(test$Sex))
+```
+```{r}
+plot(train$Sex)
+```
+### La variable Embarked  
+Variable categòrica. Indica el port en que van embarcar. Pot adoptar els següents valors:  
+C = Cherbourg, Q = Queenstown, S = Southampton  
+  
+Passem el camp Embarked a factors:  
+```{r}
+train$Embarked <- as.factor(train$Embarked)
+print(levels(train$Embarked))
+test$Embarked <- as.factor(test$Embarked)
+print(levels(test$Embarked))
+```
+N'hi ha que tenen valor desconegut.  
+
+```{r}
+plot(train$Embarked)
+```
+### La variable cabin  
+el número de la cabina del passatger  
+
+
+## Variables numèriques 
+
+Comprovem el tipus de les variables numèriques:
+
+```{r}
+is.numeric(train$Age)
+is.numeric(test$Age)
+
+is.numeric(train$SibSp)
+is.numeric(test$SibSp)
+is.numeric(train$Parch)
+is.numeric(test$Parch)
+is.numeric(train$Fare)
+is.numeric(test$Fare)
+
+```
+
+### La variable Age  
+Variable numèrica. Indica la edat del passatger en anys. Si la edat és inferior a 1 el nombre és fraccional. Si l'edat és estimada, pren la forma xx.5.  
+
+Busquem possibles valors nuls:
+```{r}
+which(is.na(train$Age))
+which(is.na(test$Age))
+```
+Hi ha valors nuls. Podem optar per substituir-ho per la mitjana per tal de que no alteri les dades. Calculem la mitjana dels valors que no son NaN:
+```{r}
+mitjanaAge = mean(c(train$Age,test$Age), na.rm = TRUE)
+print(mitjanaAge)
+```
+```{r}
+library("imputeTS")
+train$Age <- na_replace(train$Age, mitjanaAge)
+test$Age <- na_replace(test$Age, mitjanaAge)
+```
+
+```{r}
+graphics::hist(train$Age)
+```
+### La variable Ticket  
+El nombre del tiquet de viatge 
+
+### La variable Fare  
+El preu del bitllet que va pagar el passatger  
+
+Busquem possibles valors nuls:
+```{r}
+which(is.nan(train$Fare))
+
+```
+
+```{r}
+graphics::hist(train$Fare)
+```
+### La variable Cabin  
+el número de la cabina del passatger  
+```{r}
+print(head(train$Cabin,10))
+
+```
+
+### La variable PassengerId  
+Indica l'identificador únic per al passatger. És un comptador. 
+
+### La variable Name
+Indica el nom del passatger. No és rellevant per a l'estudi, ja que no ens proporciona cap eina per saber si va sobreviure o no.
+
+## Analitzem ara quines son les variables que poden ser útils per a la predicció de supervivència.
+### Descartem:   
+#### PassengerId:  
+   És un simple identificador únic de cada registre que no aporta cap informació.  
+#### Name:  
+   El nom del passatger tampoc és analitzable.  
+#### Ticket:  
+   El número del ticket no ens aporta a priori massa informació útil.  
+#### Cabin:  
+   Per si no es de fàcil estudi. A no se que se'n pugui extreure alguna altra informació com ara la coberta a la que pertany. 
+   
+    
+### Variables que, a priori, poden influir en la predicció :   
+#### Pclass:
+   La classe social és important. A major classe social més possibilitats a priori de sobreviure.
+#### Sex: 
+   El sexe també es important. En un accident solen evacuar primer als passatgers de sexe femení.
+#### Age:
+   L'edat també influeix. Els nens es solen evacuar primer...
+#### SibSp:
+   nombre de parents per persona   
+#### Parch:
+   Nombre de fills/pares per persona
+#### Fare:  
+   El preu del bitllet a priori hauria de estar correlacionat amb la classe Pclass, per tant estudiarem si podem eliminar-lo i quedar-nos amb un dels dos.  
+#### Embarked: 
+   En principi no sembla que hagi d'influir en la possibilitat de sobreviure o no, però potser inclou alguna una relació que desconeixem. 
+    
+## Valors extrems de les variables quantitatives discretes
+Busquem els valors extrems a les variables quantitatives discretes que ens poden alterar els estadístics.
+    
+### Age
+
+```{r}
+library(car)
+Boxplot(train$Age,id=TRUE)
+```
+### SibSp
+
+```{r}
+library(car)
+Boxplot(train$SibSp,id=TRUE)
+```
+
+```{r}
+outliers8 = which(train$SibSp==8)
+print(train[outliers8,])
+
+```
+Comprovem, pel nom, que els que son 8 parents, son familia realment.  
+
+### Parch
+
+```{r}
+library(car)
+Boxplot(train$Parch,id=TRUE)
+```
+Tot i que hi ha un valor amb 6 parents, no es considera desmesurat.
+
+### Fare
+
+```{r}
+library(car)
+Boxplot(train$Fare,id=TRUE)
+```
+
+```{r}
+outliers = which(train$Fare>500)
+print(train[outliers,])
+```
+## Normalitat de les dades
+
+Comproveu si es compleix l’assumpció de normalitat en les dades.
+
+### Age
+
+```{r}
+hist(train$Age,xlim=range(0:80),main="Histograma de Age",xlab="Age",freq=FALSE)
+curve(dnorm(x,mean(train$Age),sd=sd(train$Age)), add=TRUE,col="red")
+
+```
+Amb l'histograma podem veure una forma de tipus Gaussià, que tot i que no és la forma de campana familiar, és una aproximació.
+```{r}
+qqPlot(train$Age)
+```
+
+Podem veure el QQPlot que hi ha valors dels extrems que es surten de la linea. Està desviat cap a la dreta. Això indica que la major part de les dades es concentren cap a la part baixa.
+
+
+
+
+### Correlació entre variables
+
+Sospitem que hi ha una relació entre la classe del bitllet i el cost del bitllet. 
+
+```{r}
+library(MASS)
+train_pclass_fare = subset(train, select=c("Pclass", "Fare"))
+table_pclass_fare <-table(train_pclass_fare)
+x <- prop.table(table_pclass_fare)            #Por defecto proporciones totales. 
+
+#cor.test(train_pclass_fare$Fare , train_pclass_fare$Pclass , method = "spearman", alternative = "two.sided")
+
+
+
+```
+La prova de Chi^2 ens donara la probabilitat d'independència.  
+h0: Les dades son independents  
+h1: No hi ha independencia entre les dos variables  
+```{r}
+chisq.test(table_pclass_fare)
+```
+Com p<0.05 rebutjem la hipotesis h0. No podem afirmar que les dues variables siguin independents.
+
+--- 
+
+Ens preguntem ara si existeixen diferències significatives en el grau de supervivència (Survived) dels homes en relació a les dones. 
+Distribució de Survived d’homes i dones per separat en un boxplot
+
+```{r}
+library(ggplot2)
+train_sex = subset(train, select=c("Sex", "Survived"))
+```
+```{r}
+ggplot(data = train_sex, aes(x = train_sex$Survived, y = train_sex$Sex, color = train_sex$Survived)) +
+  geom_boxplot(outlier.shape = NA) +
+  geom_jitter(width = 0.1) +
+  theme_bw() +
+  theme(legend.position = "null")
+```
+Com es pot veure pel gràfic, si que hi ha diferències significatives pel que fa al sexe. Els Survived es decanten pel sexe female i els Survived=0 pel male.  
+
+Anem a fer un model de regressió simple utilitzant com a variable dependent Survived i independent sex.
+
+```{r}
+modelo <- glm(train_sex$Survived ~ train_sex$Sex, data = train_sex, family = "binomial")
+summary(modelo)
+```
+
+```{r}
+confint(object = modelo, level = 0.95 )
+
+```
+
+Sembla que el Sexe és significatiu, i el valor 'male' determina negativament la possibilitat de supervivència.
+
+Provem a veure si la edat es significativa:
+
+```{r}
+train_age = subset(train, select=c("Age", "Survived"))
+ggplot(data = train_age, aes(x = train_age$Survived, y = train_age$Age, color = train_age$Survived)) +
+  geom_boxplot(outlier.shape = NA) +
+  geom_jitter(width = 0.1) +
+  theme_bw() +
+  theme(legend.position = "null")
+
+```
+Pel que podem veure no sembla massa determinant. No hi ha grans diferències.  
+Afegim l'edat al model de regressió:  
+
+```{r}
+
+modelo <- glm(train_age$Survived ~ train_age$Age, data = train_age, family = "binomial")
+summary(modelo)
+
+```
+Sembla que l'edat és lleugerament significativa però no massa.
+
+Provem ara, la classe del bitllet. Pclass. Fem un model de regressió simple:  
+
+```{r}
+
+train_pclass = subset(train, select=c("Pclass", "Survived"))
+
+modelo <- glm(train_pclass$Survived ~ train_pclass$Pclass, data = train_pclass, family = "binomial")
+summary(modelo)
+
+```
+La classe del bitllet si es significativa.  
+
+## Model de regressió logísti múltiple.
+
+Afegirem la variable de l'edat i la classe a la del sexe per a fer un model logístic múltiple:
+
+```{r}
+train_sex_age_pclass = subset(train, select=c("Sex", "Age", "Pclass", "Survived"))
+
+
+modelo.log.m <- glm(train_sex_age_pclass$Survived ~ . , data = train_sex_age_pclass, family = binomial)
+summary(modelo.log.m)
+```
+```{r}
+confint(object = modelo.log.m, level = 0.95)
+
+```
+La edat no sembla massa determinant per la supervivència combinada tot i que influeix negativament. Aleshores, la variable que més influeix és el sexe. En el cas dels homes en sentit negatiu, es a dir, els homes tenen menys possibilitats de sobreviure. L'altre paràmetre que afecta més en segona posició és la classe social. Com més baixa menys possibilitats de supervivència. I finalment la edat, com més alta menys possibilitats de supervivència, tot i que influeix molt poc.
+
+
+## Algorismes de classificació
+
+Aplicarem ara alguns algorismes de classificació que ens proporcionaran algun model de predicció.  
+
+Primer que res dividim el fitxer de train en train i test i n'agafarem les columnes que volem utilitzar:
+```{r}
+install.packages("caret")
+install.packages("rpart")
+install.packages("rpart.plot")
+```
+
+```{r}
+library(caret)
+library(rpart.plot)
+library(lattice)
+library(ggplot2)
+library(rpart)
+
+trainIndex = createDataPartition(train$Survived,
+                       p=0.7, list=FALSE,times=1)
+ 
+```
+
+
+
+```{r}
+subtrain = subset(train[trainIndex,],select=c("Sex", "Age", "Pclass","SibSp","Parch", "Survived"))
+subtest = subset(train[-trainIndex,],select=c("Sex", "Age", "Pclass","SibSp","Parch", "Survived"))
+
+print(subtrain)
+print(subtest)
+
+```
+
+```{r}
+summary(subtrain)
+```
+## Arbre de decisió
+
+Un cop tenim les dades preparades aplicarem l'algorisme d'arbre de decisió per a obtenir un model de predicció. Utilitzarem "cross-validation repeated" per a provar amb diferents subconjunts d'entrenament (10) amb 3 repeticions.
+Passem a entrenar l'algorisme amb train. El mètode "rpart" indica de quina manera es divideixen els nodes al classificar a l'arbre. 
+
+
+```{r}
+trctrl <- trainControl(method = "repeatedcv", number = 10, repeats = 3)
+set.seed(3333)
+dtree_fit <- train(Survived ~., data = subtrain, method = "rpart",
+                   parms = list(split = "information"),
+                   trControl=trctrl,
+                   tuneLength = 10)
+```
+EL resultat de l'entrenament és el següent:
+```{r}
+dtree_fit
+```
+```{r}
+test_pred <- predict(dtree_fit, newdata = subtest)
+confusionMatrix(test_pred, subtest$Survived )  #check accuracy
+```
+
+
+Ara provarem d'entrenar l'algorisme amb un altre criteri de partició de fulles. L'index gini
+
+```{r}
+ set.seed(3333)
+dtree_fit_gini <- train(Survived ~., data = subtrain, method = "rpart",
+                   parms = list(split = "gini"),
+                   trControl=trctrl,
+                   tuneLength = 10)
+dtree_fit_gini
+```
+provem de predir els valors del conjunt de test, a veure que tal funciona l'algorisme. Treiem la matriu de confusió:
+
+```{r}
+test_pred_gini <- predict(dtree_fit_gini, newdata = subtest)
+confusionMatrix(test_pred_gini, subtest$Survived )  #check accuracy
+```
+La precissió és de 0.78.  
+La representació de l'arbre és la següent:
+```{r}
+prp(dtree_fit_gini$finalModel, box.palette = "Blues", tweak = 1.2)
+```
+
+## Gradient Boosting
+
+Ara provarem un algorisme de classificació que és una combinació d'algorismes classificadors. El Gradient Boosting és una tècnica d Machine Learning per a problemes de regressió i classificació que produeix un model de predicció ensamblant un conjunt de models de predicció febles, tipicament arbres de decisió. La idea és anar seqüèncialment prioritzant els punts que els models cataloguen malament per a que el següent algorisme es centri en ells. 
+
+
+```{r}
+install.packages("gbm")
+install.packages("MASS")
+```
+
+```{r}
+library(gbm)
+library(MASS)
+```
+
+Utilitzem Cross Validation per a repetir l'entrenament amb diferents subconjunts de dades i trobar així, la combinació de paràmetres més òptima:  
+```{r}
+fitControl <- trainControl(method = "repeatedcv", number = 10, repeats = 3)
+gbmFit1 <- train(Survived ~ ., data = subtrain, method = "gbm", trControl = fitControl,verbose = FALSE)
+gbmFit1
+
+```
+Un cop tenim el model entrenat, executem les prediccions sobre les dades de prova:
+```{r}
+test_pred_gbmFit1 <- predict(gbmFit1, newdata = subtest)
+confusionMatrix(test_pred_gbmFit1, subtest$Survived )  #check accuracy
+```
+La precisió ha pujat lleugerament fins a 0.82 respecte a l'arbre de decisió.  
+
+Finalment, provarem l'algorisme Extreme Gradient Boost:
+
+```{r}
+install.packages("xgboost")
+install.packages("onehot")
+```
+
+Preparem les dades:  
+Separem el conjunt en training i testing
+
+```{r}
+set.seed(100)  # For reproducibility
+
+# Create index for testing and training data
+inTrain <- createDataPartition(y = train$Survived, p = 0.8, list = FALSE)
+
+# subset power_plant data to training
+training <- train[inTrain,]
+
+
+# subset the rest to test
+ testing <- train[-inTrain,]
+ 
+ print(training)
+ print(testing)
+```
+
+```{r}
+library(xgboost)
+library(onehot)
+
+training = subset(training,select=c("PassengerId","Sex", "Age", "Pclass","Survived"))
+testing = subset(testing,select=c("PassengerId","Sex", "Age", "Pclass","Survived"))
+
+print(training)
+print(testing)
+
+```
+Per a executar aquest algorisme les dades han de ser numèriques, per tant, hem de transformar les dades categòriques en una matriu de columnes per a cada valor possible del factor. Utilitzem la funció onehot:
+```{r}
+y_train <- training$Survived
+y_test <- testing$Survived
+
+X_train_onehot <- onehot(subset(training,select=c("PassengerId","Sex", "Pclass")))
+X_test_onehot <- onehot(subset(testing,select=c("PassengerId","Sex", "Pclass")))
+
+X_train <- predict(X_train_onehot,training)
+X_test <- predict(X_test_onehot,testing)
+
+```
+
+Un cop tenim les dades preparades les transformem en un format de matriu que necessita l'algorisme:
+
+
+```{r}
+#X_train = xgb.DMatrix(as.matrix(X_train %>% select(-Survived)))
+
+X_train = xgb.DMatrix(as.matrix(X_train))
+X_test = xgb.DMatrix(as.matrix(X_test))
+
+
+```
+```{r}
+X_train
+X_test
+
+```
+Utilitzem cross validation per a entrenar el model amb 5 subconjunts de dades :
+```{r}
+xgb_trcontrol = trainControl(
+  method = "cv",
+  number = 5,  
+  allowParallel = TRUE,
+  verboseIter = FALSE,
+  returnData = FALSE
+)
+
+```
+Configurem uns paràmetres concrets:
+```{r}
+xgbGrid <- expand.grid(nrounds = c(100,200),  
+                       max_depth = c(10, 15, 20, 25),
+                       colsample_bytree = seq(0.5, 0.9, length.out = 5),
+                       eta = 0.1,
+                       gamma=0,
+                       min_child_weight = 1,
+                       subsample = 1
+                      )
+```
+
+Entrenem el model amb aquests paràmetres:
+```{r}
+set.seed(0) 
+
+xgb_model = train(
+  X_train, y_train,  
+  trControl = xgb_trcontrol,
+  tuneGrid = xgbGrid,
+  method = "xgbTree"
+)
+
+```
+Obtenim la combinació òptima de paràmetres:
+```{r}
+xgb_model$bestTune
+```
+Executem la predicció sobre el conjunt de test:
+```{r}
+predicted = predict(xgb_model, X_test)
+
+predicted<-ifelse(predicted=='0',0,1)
+y_test<-ifelse(y_test=='0',0,1)
+
+resultat = as.data.frame(cbind(predicted = predicted,
+                            observed = y_test))
+print(resultat)
+confusionMatrix (xgb_model)
+
+
+
+```
+Obtenim una precissió de 80%. A partir d'aquí caldria jugar amb els paràmetres per a millorar si es pot els resultats.
+
+
+## Conclusions generals.
+
+L'objectiu d'aquest dataset és obtenir un model capaç de predir amb la màxima precisió la supervivència d'un passatger en funció d'una sèrie de dades que tenim sobre cadascun.   
+Hem fet models de regressió simple i múltiple per veure la influència de cada variable. Donat el tipus de dades, hem fet un model logístic. Els resultats obtinguts ens diuen que la variable del sexe és la més determinant a l'hora d'establir la supervivència (els homes tenen menys probabilitats de sobreviure), seguida de la classe social (reflexada en la categoria del bitllet) (com més baixa menys possibilitats) i de l'edat (en molt baix percentatge).  
+ 
+Desprès hem provat algorismes de classificació. L'algorisme de l'arbre de decisió ens donava una precisió a l'hora de fer la predicció d'un 78%-80% en funció dels paràmetres.
+La combinació d'algorismes de classificació en la forma del Gradient Boosting fa pujar la precisió lleugerament fins a 82%.
+Finalment provem l'algorisme de combinació d'algorismes més emprat actualment, el Extreme Gradient Boosting, una variant del Gradient Boosting amb capacitat per provar diferents combinacions de paràmetres. 
+
+
+<table>
+<tr><td>Contribuciones</td><td>Firma</td></tr>
+<tr><td> Investigació prèvia</td><td> Joan Carles Badia Purroy</td></tr>
+<tr><td> Redacció de les respostes</td><td>Joan Carles Badia Purroy</td></tr>
+<tr><td>Desenvolupament codi</td><td>Joan Carles Badia Purroy</td></tr>
+</table>
+
